@@ -15,6 +15,8 @@ func Sort(dir string, dryRun bool) error {
 		return err
 	}
 
+	stats := map[string]int{}
+
 	for _, file := range files {
 		if file.IsDir() {
 			continue
@@ -34,6 +36,7 @@ func Sort(dir string, dryRun bool) error {
 
 		if dryRun {
 			color.New(color.FgHiYellow).Printf("[DRY] %s -> %s\n", name, category)
+			stats[category]++
 			continue
 		}
 
@@ -45,8 +48,25 @@ func Sort(dir string, dryRun bool) error {
 			continue
 		}
 
-		color.New(color.FgHiBlue).Printf("Moved: %s -> %s", name, category)
+		stats[category]++
+
+		color.New(color.FgHiBlue).Printf("Moved: %s -> %s\n", name, category)
 	}
 
+	printStats(stats)
+
 	return nil
+}
+
+func printStats(stats map[string]int) {
+	color.New(color.FgHiGreen, color.Bold).Println("\nSorting statistics:")
+
+	total := 0
+
+	for category, count := range stats {
+		color.New(color.FgHiCyan).Printf("%-10s : %d\n", category, count)
+		total += count
+	}
+
+	color.New(color.Bold).Printf("\nTotal files: %d\n", total)
 }
