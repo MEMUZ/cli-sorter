@@ -33,7 +33,8 @@ func Sort(dir string, dryRun bool) error {
 		dst := filepath.Join(dstDir, name)
 
 		if dryRun {
-			color.New(color.FgHiYellow).Printf("[DRY] %s -> %s", name, category)
+			color.New(color.FgHiYellow).Printf("[DRY] %s -> %s\n", name, category)
+			continue
 		}
 
 		os.MkdirAll(dstDir, os.ModePerm)
