@@ -2,6 +2,7 @@ package sorter
 
 import (
 	"cli-sorter/types"
+	"cli-sorter/utils"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,7 +16,7 @@ func Sort(dir string, dryRun bool) error {
 		return err
 	}
 
-	stats := map[string]int{}
+	statsMap := map[string]int{}
 
 	for _, file := range files {
 		if file.IsDir() {
@@ -32,11 +33,11 @@ func Sort(dir string, dryRun bool) error {
 
 		src := filepath.Join(dir, name)
 		dstDir := filepath.Join(dir, category)
-		dst := filepath.Join(dstDir, name)
+		dst := utils.GetUniqueFilePath(filepath.Join(dstDir, name))
 
 		if dryRun {
 			color.New(color.FgHiYellow).Printf("[DRY] %s -> %s\n", name, category)
-			stats[category]++
+			statsMap[category]++
 			continue
 		}
 
@@ -48,25 +49,12 @@ func Sort(dir string, dryRun bool) error {
 			continue
 		}
 
-		stats[category]++
+		statsMap[category]++
 
 		color.New(color.FgHiBlue).Printf("Moved: %s -> %s\n", name, category)
 	}
 
-	printStats(stats)
+	utils.PrintStats(statsMap)
 
 	return nil
-}
-
-func printStats(stats map[string]int) {
-	color.New(color.FgHiGreen, color.Bold).Println("\nSorting statistics:")
-
-	total := 0
-
-	for category, count := range stats {
-		color.New(color.FgHiCyan).Printf("%-10s : %d\n", category, count)
-		total += count
-	}
-
-	color.New(color.Bold).Printf("\nTotal files: %d\n", total)
 }
