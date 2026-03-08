@@ -1,41 +1,24 @@
 package main
 
 import (
+	"cli-sorter/cli"
 	"cli-sorter/sorter"
 	"cli-sorter/utils"
-	"flag"
 
 	"github.com/fatih/color"
 )
 
 func main() {
-	dryRun := flag.Bool("dry-run", false, "preview sorting without moving files")
-	quiet := flag.Bool("quiet", false, "show only final statistics")
+	cfg := cli.ParseFlags()
 
-	// short
-	dryRunShort := flag.Bool("d", false, "dry-run (short)")
-	quietShort := flag.Bool("q", false, "quiet mode (short)")
-
-	flag.Parse()
-
-	if flag.NArg() < 1 {
-		color.New(color.FgHiRed).Println("Usage: sorter [--dry-run | -d] [--quiet | -q] <directory>")
+	if cfg.Dir == "" {
+		color.New(color.FgHiRed).Println("Usage: sorter [flags] <directory>")
 		return
 	}
 
-	dir := flag.Arg(0)
+	color.New(color.Bold).Println("Sorting folder:", cfg.Dir)
 
-	if *dryRunShort {
-		*dryRun = true
-	}
-
-	if *quietShort {
-		*quiet = true
-	}
-
-	color.New(color.Bold).Println("Sorting folder:", dir)
-
-	err := sorter.Sort(dir, *dryRun, *quiet)
+	err := sorter.Sort(cfg.Dir, cfg.DryRun, cfg.Quiet, cfg.Ignore)
 	if err != nil {
 		color.New(color.FgHiRed).Println("Error:", err)
 		return

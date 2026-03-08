@@ -49,3 +49,20 @@ func WaitForEnter() {
 	color.New(color.FgHiWhite).Println("Press Enter to exit...")
 	fmt.Scanln()
 }
+
+func ParseIgnore(ignore string) map[string]bool {
+	result := map[string]bool{}
+
+	if ignore == "" {
+		return result
+	}
+
+	items := strings.Split(ignore, ",")
+
+	for _, item := range items {
+		item = strings.TrimSpace(item)
+		result[item] = true
+	}
+
+	return result
+}
