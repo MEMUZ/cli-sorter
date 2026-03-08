@@ -43,3 +43,9 @@ func GetUniqueFilePath(dst string) string {
 		i++
 	}
 }
+
+func WaitForEnter() {
+	fmt.Println()
+	color.New(color.FgHiWhite).Println("Press Enter to exit...")
+	fmt.Scanln()
+}

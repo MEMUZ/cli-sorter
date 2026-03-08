@@ -2,39 +2,45 @@ package main
 
 import (
 	"cli-sorter/sorter"
-	"fmt"
-	"os"
+	"cli-sorter/utils"
+	"flag"
 
 	"github.com/fatih/color"
 )
 
-func waitForEnter() {
-	fmt.Println()
-	color.New(color.FgHiWhite).Println("Press Enter to exit...")
-	fmt.Scanln()
-}
-
 func main() {
-	if len(os.Args) < 2 {
-		color.New(color.FgHiRed).Println("Usage: sorter <directory> [--dry-run]")
+	dryRun := flag.Bool("dry-run", false, "preview sorting without moving files")
+	quiet := flag.Bool("quiet", false, "show only final statistics")
+
+	// short
+	dryRunShort := flag.Bool("d", false, "dry-run (short)")
+	quietShort := flag.Bool("q", false, "quiet mode (short)")
+
+	flag.Parse()
+
+	if flag.NArg() < 1 {
+		color.New(color.FgHiRed).Println("Usage: sorter [--dry-run | -d] [--quiet | -q] <directory>")
 		return
 	}
 
-	dir := os.Args[1]
-	dryRun := false
+	dir := flag.Arg(0)
 
-	if len(os.Args) > 2 && os.Args[2] == "--dry-run" {
-		dryRun = true
+	if *dryRunShort {
+		*dryRun = true
+	}
+
+	if *quietShort {
+		*quiet = true
 	}
 
 	color.New(color.Bold).Println("Sorting folder:", dir)
 
-	err := sorter.Sort(dir, dryRun)
+	err := sorter.Sort(dir, *dryRun, *quiet)
 	if err != nil {
 		color.New(color.FgHiRed).Println("Error:", err)
 		return
 	}
 
 	color.New(color.FgHiGreen, color.Bold).Println("Sorting complete")
-	waitForEnter()
+	utils.WaitForEnter()
 }

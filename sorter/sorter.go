@@ -10,7 +10,7 @@ import (
 	"github.com/fatih/color"
 )
 
-func Sort(dir string, dryRun bool) error {
+func Sort(dir string, dryRun bool, quiet bool) error {
 	files, err := os.ReadDir(dir)
 	if err != nil {
 		return err
@@ -36,7 +36,9 @@ func Sort(dir string, dryRun bool) error {
 		dst := utils.GetUniqueFilePath(filepath.Join(dstDir, name))
 
 		if dryRun {
-			color.New(color.FgHiYellow).Printf("[DRY] %s -> %s\n", name, category)
+			if !quiet {
+				color.New(color.FgHiYellow).Printf("[DRY] %s -> %s\n", name, category)
+			}
 			statsMap[category]++
 			continue
 		}
@@ -51,7 +53,9 @@ func Sort(dir string, dryRun bool) error {
 
 		statsMap[category]++
 
-		color.New(color.FgHiBlue).Printf("Moved: %s -> %s\n", name, category)
+		if !quiet {
+			color.New(color.FgHiBlue).Printf("Moved: %s -> %s\n", name, category)
+		}
 	}
 
 	utils.PrintStats(statsMap)
