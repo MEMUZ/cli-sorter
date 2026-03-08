@@ -23,6 +23,14 @@ var Rules = map[string]string{
 	".flv":  "videos",
 	".wmv":  "videos",
 
+	// Audios
+	".mp3":  "audios",
+	".aac":  "audios",
+	".wav":  "audios",
+	".flac": "audios",
+	".aiff": "audios",
+	".ogg":  "audios",
+
 	// Documents
 	".pdf":  "documents",
 	".doc":  "documents",
