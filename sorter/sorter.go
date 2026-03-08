@@ -10,13 +10,14 @@ import (
 	"github.com/fatih/color"
 )
 
-func Sort(dir string, dryRun bool, quiet bool) error {
+func Sort(dir string, dryRun bool, quiet bool, ignore string) error {
 	files, err := os.ReadDir(dir)
 	if err != nil {
 		return err
 	}
 
 	statsMap := map[string]int{}
+	ignoreMap := utils.ParseIgnore(ignore)
 
 	for _, file := range files {
 		if file.IsDir() {
@@ -25,6 +26,10 @@ func Sort(dir string, dryRun bool, quiet bool) error {
 
 		name := file.Name()
 		ext := strings.ToLower(filepath.Ext(name))
+
+		if ignoreMap[name] || ignoreMap[ext] {
+			continue
+		}
 
 		category, ok := types.Rules[ext]
 		if !ok {

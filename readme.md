@@ -18,6 +18,7 @@ Perfect for quickly cleaning up messy Downloads folders.
 - 📁 Automatic folder creation
 - 🔍 Dry-run mode to preview changes
 - 🔕 Quiet mode to not distract you with log messages
+- 📑 Ignore some files from sorting
 - 🧩 Easy to extend file rules
 
 ## 📦 Supported File Categories
@@ -72,6 +73,7 @@ Result:
 Downloads/
   images/
   videos/
+  audios/
   documents/
   archives/
   other/
@@ -112,6 +114,22 @@ Example:
 ```bash
 sorter.exe --quiet ~/Downloads
 ```
+
+## Ignore files
+
+Ignore files you don't want to sort
+
+```bash
+sorter.exe [--ignore | -i] [files-list] <directory>
+```
+
+Example:
+
+```bash
+sorter.exe --ignore .log,my-video.mp4 ~/Downloads
+```
+
+Command above will ignore all `.log` files and specifically `my-video.mp4` file
 
 If you need help with commands you can type:
 
