@@ -18,7 +18,7 @@ func main() {
 
 	color.New(color.Bold).Println("Sorting folder:", cfg.Dir)
 
-	err := sorter.Sort(cfg.Dir, cfg.DryRun, cfg.Quiet, cfg.Ignore)
+	err := sorter.Sort(cfg.Dir, cfg.DryRun, cfg.Quiet, cfg.Ignore, cfg.Recursive)
 	if err != nil {
 		color.New(color.FgHiRed).Println("Error:", err)
 		return
