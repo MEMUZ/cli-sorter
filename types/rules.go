@@ -1,53 +1,71 @@
 package types
 
+const (
+	Images    = "images"
+	Videos    = "videos"
+	Audios    = "audios"
+	Documents = "documents"
+	Archives  = "archives"
+	Other     = "other"
+)
+
 var Rules = map[string]string{
 	// Images
-	".jpg":  "images",
-	".jpeg": "images",
-	".png":  "images",
-	".webp": "images",
-	".tiff": "images",
-	".tif":  "images",
-	".psd":  "images",
-	".raw":  "images",
-	".avif": "images",
-	".svg":  "images",
-	".gif":  "images",
+	".jpg":  Images,
+	".jpeg": Images,
+	".png":  Images,
+	".webp": Images,
+	".tiff": Images,
+	".tif":  Images,
+	".psd":  Images,
+	".raw":  Images,
+	".avif": Images,
+	".svg":  Images,
+	".gif":  Images,
 
 	// Videos
-	".mp4":  "videos",
-	".mkv":  "videos",
-	".avi":  "videos",
-	".webm": "videos",
-	".mov":  "videos",
-	".flv":  "videos",
-	".wmv":  "videos",
+	".mp4":  Videos,
+	".mkv":  Videos,
+	".avi":  Videos,
+	".webm": Videos,
+	".mov":  Videos,
+	".flv":  Videos,
+	".wmv":  Videos,
 
 	// Audios
-	".mp3":  "audios",
-	".aac":  "audios",
-	".wav":  "audios",
-	".flac": "audios",
-	".aiff": "audios",
-	".ogg":  "audios",
+	".mp3":  Audios,
+	".aac":  Audios,
+	".wav":  Audios,
+	".flac": Audios,
+	".aiff": Audios,
+	".ogg":  Audios,
 
 	// Documents
-	".pdf":  "documents",
-	".doc":  "documents",
-	".xls":  "documents",
-	".ppt":  "documents",
-	".docx": "documents",
-	".xlsx": "documents",
-	".pptx": "documents",
-	".csv":  "documents",
-	".odt":  "documents",
-	".odp":  "documents",
-	".ods":  "documents",
-	".txt":  "documents",
+	".pdf":  Documents,
+	".doc":  Documents,
+	".xls":  Documents,
+	".ppt":  Documents,
+	".docx": Documents,
+	".xlsx": Documents,
+	".pptx": Documents,
+	".csv":  Documents,
+	".odt":  Documents,
+	".odp":  Documents,
+	".ods":  Documents,
+	".txt":  Documents,
 
 	// Archives
-	".zip": "archives",
-	".rar": "archives",
-	".7z":  "archives",
-	".tar": "archives",
+	".zip": Archives,
+	".rar": Archives,
+	".7z":  Archives,
+	".tar": Archives,
+}
+
+func IsCategoryDir(name string) bool {
+	switch name {
+	case Images, Videos, Audios, Documents, Archives, Other:
+		return true
+	default:
+		return false
+	}
 }

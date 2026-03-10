@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"cli-sorter/types"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -57,12 +58,51 @@ func ParseIgnore(ignore string) map[string]bool {
 		return result
 	}
 
-	items := strings.Split(ignore, ",")
+	items := strings.SplitSeq(ignore, ",")
 
-	for _, item := range items {
+	for item := range items {
 		item = strings.TrimSpace(item)
 		result[item] = true
 	}
 
 	return result
+}
+
+func RemoveEmptyDirs(root string) error {
+	var dirs []string
+
+	err := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return nil
+		}
+
+		if d.IsDir() && path != root {
+			dirs = append(dirs, path)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	for i := len(dirs) - 1; i >= 0; i-- {
+		dir := dirs[i]
+
+		if types.IsCategoryDir(filepath.Base(dir)) {
+			continue
+		}
+
+		entries, err := os.ReadDir(dir)
+		if err != nil {
+			continue
+		}
+
+		if len(entries) == 0 {
+			os.Remove(dir)
+		}
+	}
+
+	return nil
 }
