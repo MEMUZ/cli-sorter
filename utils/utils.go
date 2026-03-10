@@ -57,9 +57,9 @@ func ParseIgnore(ignore string) map[string]bool {
 		return result
 	}
 
-	items := strings.Split(ignore, ",")
+	items := strings.SplitSeq(ignore, ",")
 
-	for _, item := range items {
+	for item := range items {
 		item = strings.TrimSpace(item)
 		result[item] = true
 	}
