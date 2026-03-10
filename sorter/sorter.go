@@ -21,7 +21,11 @@ func Sort(dir string, dryRun bool, quiet bool, ignore string, recursive bool) er
 		}
 
 		for _, file := range files {
-			processFile(dir, file.Name(), dryRun, quiet, ignoreMap, statsMap)
+			if file.IsDir() {
+				continue
+			}
+
+			processFile(dir, dir, file.Name(), dryRun, quiet, ignoreMap, statsMap)
 		}
 	} else {
 		filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
@@ -36,7 +40,7 @@ func Sort(dir string, dryRun bool, quiet bool, ignore string, recursive bool) er
 				return nil
 			}
 
-			processFile(filepath.Dir(path), d.Name(), dryRun, quiet, ignoreMap, statsMap)
+			processFile(dir, filepath.Dir(path), d.Name(), dryRun, quiet, ignoreMap, statsMap)
 
 			return nil
 		})
@@ -44,10 +48,14 @@ func Sort(dir string, dryRun bool, quiet bool, ignore string, recursive bool) er
 
 	utils.PrintStats(statsMap)
 
+	if recursive && !dryRun {
+		utils.RemoveEmptyDirs(dir)
+	}
+
 	return nil
 }
 
-func processFile(dir, name string, dryRun, quiet bool, ignoreMap map[string]bool, stats map[string]int) {
+func processFile(rootDir, currentDir, name string, dryRun, quiet bool, ignoreMap map[string]bool, stats map[string]int) {
 	ext := strings.ToLower(filepath.Ext(name))
 
 	if ignoreMap[name] || ignoreMap[ext] {
@@ -59,8 +67,8 @@ func processFile(dir, name string, dryRun, quiet bool, ignoreMap map[string]bool
 		category = "other"
 	}
 
-	src := filepath.Join(dir, name)
-	dstDir := filepath.Join(dir, category)
+	src := filepath.Join(currentDir, name)
+	dstDir := filepath.Join(rootDir, category)
 	dst := utils.GetUniqueFilePath(filepath.Join(dstDir, name))
 
 	if dryRun {

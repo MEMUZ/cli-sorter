@@ -141,7 +141,7 @@ sorter.exe -h
 
 ## Recursive mode
 
-Ignore files you don't want to sort
+Recursively sort files in a directory
 
 ```bash
 sorter.exe [--recursive | -r] <directory>

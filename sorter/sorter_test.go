@@ -7,25 +7,35 @@ import (
 	"testing"
 )
 
-func TestSort(t *testing.T) {
+func createTestFile(t *testing.T, dir, name string) {
+	t.Helper()
+	path := filepath.Join(dir, name)
+	f, err := os.Create(path)
+	if err != nil {
+		t.Fatalf("Failed to create %s: %v", name, err)
+	}
+	f.Close()
+}
+
+func checkFileMoved(t *testing.T, baseDir, fileName, category string) {
+	t.Helper()
+	src := filepath.Join(baseDir, fileName)
+	dst := filepath.Join(baseDir, category, fileName)
+
+	if _, err := os.Stat(src); !os.IsNotExist(err) {
+		t.Errorf("File %s should be moved from source", fileName)
+	}
+	if _, err := os.Stat(dst); os.IsNotExist(err) {
+		t.Errorf("File %s should exist in %s directory", fileName, category)
+	}
+}
+
+func TestSort_NonRecursive(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	files := []string{
-		"photo.jpg",
-		"document.pdf",
-		"song.mp3",
-		"archive.zip",
-		"unknown.xyz",
-		".gitignore",
-	}
-
+	files := []string{"photo.jpg", "document.pdf", "song.mp3", "archive.zip", "unknown.xyz", ".gitignore"}
 	for _, f := range files {
-		path := filepath.Join(tmpDir, f)
-		file, err := os.Create(path)
-		if err != nil {
-			t.Fatalf("Failed to create %s: %v", f, err)
-		}
-		file.Close()
+		createTestFile(t, tmpDir, f)
 	}
 
 	err := Sort(tmpDir, false, true, ".gitignore", false)
@@ -43,25 +53,32 @@ func TestSort(t *testing.T) {
 		t.Error(".gitignore should not be moved")
 	}
 
+	subDir := filepath.Join(tmpDir, "subdir")
+	os.MkdirAll(subDir, 0755)
+	createTestFile(t, subDir, "nested.jpg")
+
+	err = Sort(tmpDir, false, true, "", false)
+	if err != nil {
+		t.Fatalf("Sort failed: %v", err)
+	}
+
+	if _, err := os.Stat(filepath.Join(subDir, "nested.jpg")); os.IsNotExist(err) {
+		t.Error("File in subdir should not be moved in non-recursive mode")
+	}
+
 	runtime.GC()
 }
 
-func TestSortDryRun(t *testing.T) {
+func TestSort_DryRun(t *testing.T) {
 	tmpDir := t.TempDir()
-
-	filePath := filepath.Join(tmpDir, "test.jpg")
-	file, error := os.Create(filePath)
-	if error != nil {
-		t.Fatalf("Failed to create test.jpg: %v", error)
-	}
-	file.Close()
+	createTestFile(t, tmpDir, "test.jpg")
 
 	err := Sort(tmpDir, true, true, "", false)
 	if err != nil {
 		t.Fatalf("Sort dry-run failed: %v", err)
 	}
 
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(tmpDir, "test.jpg")); os.IsNotExist(err) {
 		t.Error("File should not be moved in dry-run mode")
 	}
 
@@ -73,21 +90,46 @@ func TestSortDryRun(t *testing.T) {
 	runtime.GC()
 }
 
-func TestSortRecursive(t *testing.T) {
+func TestSort_FileCollision(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	// Folder structure:
+	imagesDir := filepath.Join(tmpDir, "images")
+	os.MkdirAll(imagesDir, 0755)
+	createTestFile(t, imagesDir, "photo.jpg")
+
+	createTestFile(t, tmpDir, "photo.jpg")
+
+	err := Sort(tmpDir, false, true, "", false)
+	if err != nil {
+		t.Fatalf("Sort failed: %v", err)
+	}
+
+	original := filepath.Join(imagesDir, "photo.jpg")
+	if _, err := os.Stat(original); os.IsNotExist(err) {
+		t.Error("Original file should not be overwritten")
+	}
+
+	renamed := filepath.Join(imagesDir, "photo (1).jpg")
+	if _, err := os.Stat(renamed); os.IsNotExist(err) {
+		t.Error("Colliding file should be renamed with suffix")
+	}
+
+	runtime.GC()
+}
+
+func TestSort_Recursive_Basic(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// folder structure:
 	// tmpDir/
-	// ├── root.jpg                    -> images/
+	// ├── root.jpg                    -> images/ (root)
 	// ├── subdir1/
-	// │   ├── photo.png               -> subdir1/images/
+	// │   ├── photo.png               -> images/ (root, not in subdir1)
 	// │   └── nested/
-	// │       └── audio.mp3           -> subdir1/nested/audios/
+	// │       └── audio.mp3           -> audios/ (root)
 	// ├── subdir2/
-	// │   ├── doc.pdf                 -> subdir2/documents/
-	// │   └── images/                 <- this should be skipped
-	// │       └── should_skip.jpg     <- no moves
-	// └── .gitignore                  <- ignores
+	// │   └── doc.pdf                 -> documents/ (root)
+	// └── .gitignore                  <- ignore
 
 	createTestFile(t, tmpDir, "root.jpg")
 
@@ -97,9 +139,8 @@ func TestSortRecursive(t *testing.T) {
 	createTestFile(t, filepath.Join(sub1, "nested"), "audio.mp3")
 
 	sub2 := filepath.Join(tmpDir, "subdir2")
-	os.MkdirAll(filepath.Join(sub2, "images"), 0755)
+	os.MkdirAll(sub2, 0755)
 	createTestFile(t, sub2, "doc.pdf")
-	createTestFile(t, filepath.Join(sub2, "images"), "should_skip.jpg")
 
 	createTestFile(t, tmpDir, ".gitignore")
 
@@ -109,25 +150,25 @@ func TestSortRecursive(t *testing.T) {
 	}
 
 	checkFileMoved(t, tmpDir, "root.jpg", "images")
-
-	checkFileMoved(t, sub1, "photo.png", "images")
-	checkFileMoved(t, filepath.Join(sub1, "nested"), "audio.mp3", "audios")
-
-	checkFileMoved(t, sub2, "doc.pdf", "documents")
-
-	skippedFile := filepath.Join(tmpDir, "subdir2", "images", "should_skip.jpg")
-	if _, err := os.Stat(skippedFile); os.IsNotExist(err) {
-		t.Error("File inside category directory should NOT be moved")
-	}
+	checkFileMoved(t, tmpDir, "photo.png", "images")
+	checkFileMoved(t, tmpDir, "audio.mp3", "audios")
+	checkFileMoved(t, tmpDir, "doc.pdf", "documents")
 
 	if _, err := os.Stat(filepath.Join(tmpDir, ".gitignore")); os.IsNotExist(err) {
 		t.Error(".gitignore should not be moved")
 	}
 
+	if _, err := os.Stat(sub1); !os.IsNotExist(err) {
+		entries, _ := os.ReadDir(sub1)
+		if len(entries) == 0 {
+			t.Error("Empty subdir1 should be removed")
+		}
+	}
+
 	runtime.GC()
 }
 
-func TestSortRecursiveDryRun(t *testing.T) {
+func TestSort_Recursive_DryRun(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	sub := filepath.Join(tmpDir, "photos")
@@ -140,29 +181,21 @@ func TestSortRecursiveDryRun(t *testing.T) {
 		t.Fatalf("Recursive dry-run failed: %v", err)
 	}
 
-	roots := []string{
-		filepath.Join(tmpDir, "img1.jpg"),
-		filepath.Join(sub, "img2.png"),
+	if _, err := os.Stat(filepath.Join(tmpDir, "img1.jpg")); os.IsNotExist(err) {
+		t.Error("File should not be moved in dry-run")
 	}
-	for _, p := range roots {
-		if _, err := os.Stat(p); os.IsNotExist(err) {
-			t.Errorf("File should not be moved in dry-run: %s", p)
-		}
+	if _, err := os.Stat(filepath.Join(sub, "img2.png")); os.IsNotExist(err) {
+		t.Error("File should not be moved in dry-run")
 	}
 
-	imagesRoot := filepath.Join(tmpDir, "images")
-	imagesSub := filepath.Join(sub, "images")
-	if _, err := os.Stat(imagesRoot); !os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(tmpDir, "images")); !os.IsNotExist(err) {
 		t.Error("Directory should not be created in dry-run mode")
-	}
-	if _, err := os.Stat(imagesSub); !os.IsNotExist(err) {
-		t.Error("Directory should not be created in dry-run mode (subdir)")
 	}
 
 	runtime.GC()
 }
 
-func TestSortRecursiveWithIgnore(t *testing.T) {
+func TestSort_Recursive_WithIgnore(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	sub := filepath.Join(tmpDir, "work")
@@ -180,19 +213,19 @@ func TestSortRecursiveWithIgnore(t *testing.T) {
 	}
 
 	checkFileMoved(t, tmpDir, "report.pdf", "documents")
-	checkFileMoved(t, sub, "notes.txt", "documents")
+	checkFileMoved(t, tmpDir, "notes.txt", "documents")
 
 	if _, err := os.Stat(filepath.Join(tmpDir, "temp.tmp")); os.IsNotExist(err) {
-		t.Error("temp.tmp should be ignored and stay in place")
+		t.Error("temp.tmp should be ignored")
 	}
 	if _, err := os.Stat(filepath.Join(sub, "debug.log")); os.IsNotExist(err) {
-		t.Error("debug.log should be ignored and stay in place")
+		t.Error("debug.log should be ignored")
 	}
 
 	runtime.GC()
 }
 
-func TestSortRecursiveSkipCategoryDirs(t *testing.T) {
+func TestSort_Recursive_SkipCategoryDirs(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	imagesDir := filepath.Join(tmpDir, "images")
@@ -209,36 +242,39 @@ func TestSortRecursiveSkipCategoryDirs(t *testing.T) {
 
 	checkFileMoved(t, tmpDir, "new_photo.webp", "images")
 
-	original1 := filepath.Join(imagesDir, "already_sorted.jpg")
-	original2 := filepath.Join(imagesDir, "another.png")
-	if _, err := os.Stat(original1); os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(imagesDir, "already_sorted.jpg")); os.IsNotExist(err) {
 		t.Error("Files inside category directory should not be processed")
 	}
-	if _, err := os.Stat(original2); os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(imagesDir, "another.png")); os.IsNotExist(err) {
 		t.Error("Files inside category directory should not be processed")
 	}
 
 	runtime.GC()
 }
 
-func createTestFile(t *testing.T, dir, name string) {
-	t.Helper()
-	path := filepath.Join(dir, name)
-	f, err := os.Create(path)
+func TestSort_Recursive_RemoveEmptyDirs(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	deep := filepath.Join(tmpDir, "level1", "level2", "level3")
+	os.MkdirAll(deep, 0755)
+	createTestFile(t, deep, "file.jpg")
+
+	err := Sort(tmpDir, false, true, "", true)
 	if err != nil {
-		t.Fatalf("Failed to create %s: %v", name, err)
+		t.Fatalf("Sort failed: %v", err)
 	}
-	f.Close()
-}
 
-func checkFileMoved(t *testing.T, baseDir, fileName, category string) {
-	src := filepath.Join(baseDir, fileName)
-	dst := filepath.Join(baseDir, category, fileName)
+	checkFileMoved(t, tmpDir, "file.jpg", "images")
 
-	if _, err := os.Stat(src); !os.IsNotExist(err) {
-		t.Errorf("File %s should be moved from source", fileName)
+	if _, err := os.Stat(deep); !os.IsNotExist(err) {
+		t.Error("Empty nested directories should be removed")
 	}
-	if _, err := os.Stat(dst); os.IsNotExist(err) {
-		t.Errorf("File %s should exist in %s directory", fileName, category)
+	if _, err := os.Stat(filepath.Join(tmpDir, "level1", "level2")); !os.IsNotExist(err) {
+		t.Error("Empty nested directories should be removed")
 	}
+	if _, err := os.Stat(filepath.Join(tmpDir, "level1")); !os.IsNotExist(err) {
+		t.Error("Empty nested directories should be removed")
+	}
+
+	runtime.GC()
 }

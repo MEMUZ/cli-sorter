@@ -3,8 +3,19 @@ package utils
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
+
+func createTestFile(t *testing.T, dir, name string) {
+	t.Helper()
+	path := filepath.Join(dir, name)
+	f, err := os.Create(path)
+	if err != nil {
+		t.Fatalf("Failed to create %s: %v", name, err)
+	}
+	f.Close()
+}
 
 func TestParseIgnore(t *testing.T) {
 	tests := []struct {
@@ -58,4 +69,85 @@ func TestGetUniqueFilePath(t *testing.T) {
 			t.Errorf("Expected %s, got %s", expected, result)
 		}
 	})
+
+	t.Run("Multiple collisions", func(t *testing.T) {
+		basePath := filepath.Join(tmpDir, "test.txt")
+
+		for i := 0; i < 3; i++ {
+			var name string
+			if i == 0 {
+				name = "test.txt"
+			} else {
+				name = "test (" + string(rune('0'+i)) + ").txt"
+			}
+			f, err := os.Create(filepath.Join(tmpDir, name))
+			if err != nil {
+				t.Fatalf("Failed to create file: %v", err)
+			}
+			f.Close()
+		}
+
+		result := GetUniqueFilePath(basePath)
+		expected := filepath.Join(tmpDir, "test (3).txt")
+		if result != expected {
+			t.Errorf("Expected %s, got %s", expected, result)
+		}
+	})
+}
+
+func TestRemoveEmptyDirs(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	empty1 := filepath.Join(tmpDir, "empty1")
+	empty2 := filepath.Join(tmpDir, "level1", "level2")
+	notEmpty := filepath.Join(tmpDir, "notEmpty")
+
+	os.MkdirAll(empty1, 0755)
+	os.MkdirAll(empty2, 0755)
+	os.MkdirAll(notEmpty, 0755)
+
+	createTestFile(t, notEmpty, "file.txt")
+
+	categoryDir := filepath.Join(tmpDir, "images")
+	os.MkdirAll(categoryDir, 0755)
+
+	err := RemoveEmptyDirs(tmpDir)
+	if err != nil {
+		t.Fatalf("RemoveEmptyDirs failed: %v", err)
+	}
+
+	if _, err := os.Stat(empty1); !os.IsNotExist(err) {
+		t.Error("Empty directory should be removed")
+	}
+	if _, err := os.Stat(empty2); !os.IsNotExist(err) {
+		t.Error("Empty nested directory should be removed")
+	}
+	if _, err := os.Stat(filepath.Join(tmpDir, "level1")); !os.IsNotExist(err) {
+		t.Error("Empty parent directory should be removed")
+	}
+
+	if _, err := os.Stat(notEmpty); os.IsNotExist(err) {
+		t.Error("Non-empty directory should not be removed")
+	}
+
+	if _, err := os.Stat(categoryDir); os.IsNotExist(err) {
+		t.Error("Category directory should not be removed")
+	}
+
+	runtime.GC()
+}
+
+func TestRemoveEmptyDirs_RootProtection(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	err := RemoveEmptyDirs(tmpDir)
+	if err != nil {
+		t.Fatalf("RemoveEmptyDirs failed: %v", err)
+	}
+
+	if _, err := os.Stat(tmpDir); os.IsNotExist(err) {
+		t.Error("Root directory should not be removed")
+	}
+
+	runtime.GC()
 }
