@@ -18,6 +18,8 @@ Perfect for quickly cleaning up messy Downloads folders.
 - 📁 Automatic folder creation
 - 🔍 Dry-run mode to preview changes
 - 🔕 Quiet mode to not distract you with log messages
+- 🔄 Recursive mode for handling nested directories
+- 🔁 Automatically handle duplicate files by adding postfix
 - 📑 Ignore some files from sorting
 - 🧩 Easy to extend file rules
 
@@ -130,6 +132,28 @@ sorter.exe --ignore .log,my-video.mp4 ~/Downloads
 ```
 
 Command above will ignore all `.log` files and specifically `my-video.mp4` file
+
+If you need help with commands you can type:
+
+```bash
+sorter.exe -h
+```
+
+## Recursive mode
+
+Ignore files you don't want to sort
+
+```bash
+sorter.exe [--recursive | -r] <directory>
+```
+
+Example:
+
+```bash
+sorter.exe --recursive ~/Downloads
+```
+
+Command above will sort everything in`~/Downloads` folder including subdirectories
 
 If you need help with commands you can type:
 
