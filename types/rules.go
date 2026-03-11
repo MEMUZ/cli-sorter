@@ -61,11 +61,14 @@ var Rules = map[string]string{
 	".tar": Archives,
 }
 
-func IsCategoryDir(name string) bool {
-	switch name {
-	case Images, Videos, Audios, Documents, Archives, Other:
-		return true
-	default:
-		return false
+func BuildCategorySet(rules map[string]string) map[string]bool {
+	categories := map[string]bool{}
+
+	for _, category := range rules {
+		categories[category] = true
 	}
+
+	categories["other"] = true
+
+	return categories
 }
