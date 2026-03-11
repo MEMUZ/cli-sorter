@@ -86,3 +86,78 @@ func TestParseFlags(t *testing.T) {
 		})
 	}
 }
+
+func TestParseFlags_WithConfigPath(t *testing.T) {
+	origArgs := os.Args
+	origFlag := flag.CommandLine
+	defer func() {
+		os.Args = origArgs
+		flag.CommandLine = origFlag
+	}()
+
+	tests := []struct {
+		name          string
+		args          []string
+		wantConfig    string
+		wantRecursive bool
+	}{
+		{
+			name:          "With config path",
+			args:          []string{"cmd", "-config", "/path/to/config.json", "/tmp/test"},
+			wantConfig:    "/path/to/config.json",
+			wantRecursive: false,
+		},
+		{
+			name:          "With short config flag",
+			args:          []string{"cmd", "-c", "/custom.json", "-r", "/tmp/test"},
+			wantConfig:    "/custom.json",
+			wantRecursive: true,
+		},
+		{
+			name:          "No config flag",
+			args:          []string{"cmd", "/tmp/test"},
+			wantConfig:    "",
+			wantRecursive: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+			os.Args = tt.args
+
+			cfg := ParseFlags()
+
+			if cfg.ConfigPath != tt.wantConfig {
+				t.Errorf("ConfigPath = %v, want %v", cfg.ConfigPath, tt.wantConfig)
+			}
+			if cfg.Recursive != tt.wantRecursive {
+				t.Errorf("Recursive = %v, want %v", cfg.Recursive, tt.wantRecursive)
+			}
+		})
+	}
+}
+
+func TestParseFlags_ConfigPriority(t *testing.T) {
+	origArgs := os.Args
+	origFlag := flag.CommandLine
+	defer func() {
+		os.Args = origArgs
+		flag.CommandLine = origFlag
+	}()
+
+	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+	os.Args = []string{"cmd", "-c", "short.json", "-r", "-d", "/tmp/test"}
+
+	cfg := ParseFlags()
+
+	if cfg.ConfigPath != "short.json" {
+		t.Errorf("ConfigPath = %v, want short.json", cfg.ConfigPath)
+	}
+	if !cfg.Recursive {
+		t.Error("Recursive should be true")
+	}
+	if !cfg.DryRun {
+		t.Error("DryRun should be true")
+	}
+}

@@ -21,6 +21,7 @@ Perfect for quickly cleaning up messy Downloads folders.
 - 🔄 Recursive mode for handling nested directories
 - 🔁 Automatically handle duplicate files by adding postfix
 - 📑 Ignore some files from sorting
+- ⚙️ Config JSON file for custom sorting
 - 🧩 Easy to extend file rules
 
 ## 📦 Supported File Categories
@@ -133,12 +134,6 @@ sorter.exe --ignore .log,my-video.mp4 ~/Downloads
 
 Command above will ignore all `.log` files and specifically `my-video.mp4` file
 
-If you need help with commands you can type:
-
-```bash
-sorter.exe -h
-```
-
 ## Recursive mode
 
 Recursively sort files in a directory
@@ -154,6 +149,28 @@ sorter.exe --recursive ~/Downloads
 ```
 
 Command above will sort everything in`~/Downloads` folder including subdirectories
+
+## Config file
+
+You can create your own config file to tell Sorter what and how to sort
+
+config.json
+
+```json
+{ "rules": { "my_docs": [".pdf", ".txt"] } }
+```
+
+```bash
+sorter.exe [--config | -c] [path-to-your-config] <directory>
+```
+
+Example
+
+```bash
+sorter.exe --config ./config.json
+```
+
+Command above will sort every file extension that you provide into suitable directory. All files that don't met the conditions will be placed into `other` directory.
 
 If you need help with commands you can type:
 

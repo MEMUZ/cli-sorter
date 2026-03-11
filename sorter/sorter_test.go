@@ -1,6 +1,9 @@
 package sorter
 
 import (
+	"cli-sorter/config"
+	"cli-sorter/types"
+	"cli-sorter/utils"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -38,7 +41,21 @@ func TestSort_NonRecursive(t *testing.T) {
 		createTestFile(t, tmpDir, f)
 	}
 
-	err := Sort(tmpDir, false, true, ".gitignore", false)
+	ignoreMap := utils.ParseIgnore(".gitignore")
+
+	categories := types.BuildCategorySet(types.Rules)
+
+	opts := Options{
+		Dir:        tmpDir,
+		DryRun:     false,
+		Quiet:      true,
+		Ignore:     ignoreMap,
+		Recursive:  false,
+		Rules:      types.Rules,
+		Categories: categories,
+	}
+
+	err := Sort(opts)
 	if err != nil {
 		t.Fatalf("Sort failed: %v", err)
 	}
@@ -57,7 +74,19 @@ func TestSort_NonRecursive(t *testing.T) {
 	os.MkdirAll(subDir, 0755)
 	createTestFile(t, subDir, "nested.jpg")
 
-	err = Sort(tmpDir, false, true, "", false)
+	ignoreMap1 := utils.ParseIgnore("")
+
+	opts1 := Options{
+		Dir:        tmpDir,
+		DryRun:     false,
+		Quiet:      true,
+		Ignore:     ignoreMap1,
+		Recursive:  false,
+		Rules:      types.Rules,
+		Categories: categories,
+	}
+
+	err = Sort(opts1)
 	if err != nil {
 		t.Fatalf("Sort failed: %v", err)
 	}
@@ -73,7 +102,20 @@ func TestSort_DryRun(t *testing.T) {
 	tmpDir := t.TempDir()
 	createTestFile(t, tmpDir, "test.jpg")
 
-	err := Sort(tmpDir, true, true, "", false)
+	ignoreMap := utils.ParseIgnore("")
+	categories := types.BuildCategorySet(types.Rules)
+
+	opts := Options{
+		Dir:        tmpDir,
+		DryRun:     true,
+		Quiet:      true,
+		Ignore:     ignoreMap,
+		Recursive:  false,
+		Rules:      types.Rules,
+		Categories: categories,
+	}
+
+	err := Sort(opts)
 	if err != nil {
 		t.Fatalf("Sort dry-run failed: %v", err)
 	}
@@ -99,7 +141,20 @@ func TestSort_FileCollision(t *testing.T) {
 
 	createTestFile(t, tmpDir, "photo.jpg")
 
-	err := Sort(tmpDir, false, true, "", false)
+	ignoreMap := utils.ParseIgnore("")
+	categories := types.BuildCategorySet(types.Rules)
+
+	opts := Options{
+		Dir:        tmpDir,
+		DryRun:     false,
+		Quiet:      true,
+		Ignore:     ignoreMap,
+		Recursive:  false,
+		Rules:      types.Rules,
+		Categories: categories,
+	}
+
+	err := Sort(opts)
 	if err != nil {
 		t.Fatalf("Sort failed: %v", err)
 	}
@@ -144,7 +199,20 @@ func TestSort_Recursive_Basic(t *testing.T) {
 
 	createTestFile(t, tmpDir, ".gitignore")
 
-	err := Sort(tmpDir, false, true, ".gitignore", true)
+	ignoreMap := utils.ParseIgnore(".gitignore")
+	categories := types.BuildCategorySet(types.Rules)
+
+	opts := Options{
+		Dir:        tmpDir,
+		DryRun:     false,
+		Quiet:      true,
+		Ignore:     ignoreMap,
+		Recursive:  true,
+		Rules:      types.Rules,
+		Categories: categories,
+	}
+
+	err := Sort(opts)
 	if err != nil {
 		t.Fatalf("Recursive sort failed: %v", err)
 	}
@@ -176,7 +244,20 @@ func TestSort_Recursive_DryRun(t *testing.T) {
 	createTestFile(t, tmpDir, "img1.jpg")
 	createTestFile(t, sub, "img2.png")
 
-	err := Sort(tmpDir, true, true, "", true)
+	ignoreMap := utils.ParseIgnore("")
+	categories := types.BuildCategorySet(types.Rules)
+
+	opts := Options{
+		Dir:        tmpDir,
+		DryRun:     true,
+		Quiet:      true,
+		Ignore:     ignoreMap,
+		Recursive:  true,
+		Rules:      types.Rules,
+		Categories: categories,
+	}
+
+	err := Sort(opts)
 	if err != nil {
 		t.Fatalf("Recursive dry-run failed: %v", err)
 	}
@@ -207,7 +288,20 @@ func TestSort_Recursive_WithIgnore(t *testing.T) {
 	createTestFile(t, sub, "debug.log")
 
 	ignore := ".tmp,debug.log"
-	err := Sort(tmpDir, false, true, ignore, true)
+
+	ignoreMap := utils.ParseIgnore(ignore)
+	categories := types.BuildCategorySet(types.Rules)
+
+	opts := Options{
+		Dir:        tmpDir,
+		DryRun:     false,
+		Quiet:      true,
+		Ignore:     ignoreMap,
+		Recursive:  true,
+		Rules:      types.Rules,
+		Categories: categories,
+	}
+	err := Sort(opts)
 	if err != nil {
 		t.Fatalf("Sort with ignore failed: %v", err)
 	}
@@ -235,7 +329,20 @@ func TestSort_Recursive_SkipCategoryDirs(t *testing.T) {
 
 	createTestFile(t, tmpDir, "new_photo.webp")
 
-	err := Sort(tmpDir, false, true, "", true)
+	ignoreMap := utils.ParseIgnore("")
+	categories := types.BuildCategorySet(types.Rules)
+
+	opts := Options{
+		Dir:        tmpDir,
+		DryRun:     false,
+		Quiet:      true,
+		Ignore:     ignoreMap,
+		Recursive:  true,
+		Rules:      types.Rules,
+		Categories: categories,
+	}
+
+	err := Sort(opts)
 	if err != nil {
 		t.Fatalf("Sort failed: %v", err)
 	}
@@ -259,7 +366,20 @@ func TestSort_Recursive_RemoveEmptyDirs(t *testing.T) {
 	os.MkdirAll(deep, 0755)
 	createTestFile(t, deep, "file.jpg")
 
-	err := Sort(tmpDir, false, true, "", true)
+	ignoreMap := utils.ParseIgnore("")
+	categories := types.BuildCategorySet(types.Rules)
+
+	opts := Options{
+		Dir:        tmpDir,
+		DryRun:     false,
+		Quiet:      true,
+		Ignore:     ignoreMap,
+		Recursive:  true,
+		Rules:      types.Rules,
+		Categories: categories,
+	}
+
+	err := Sort(opts)
 	if err != nil {
 		t.Fatalf("Sort failed: %v", err)
 	}
@@ -275,6 +395,215 @@ func TestSort_Recursive_RemoveEmptyDirs(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(tmpDir, "level1")); !os.IsNotExist(err) {
 		t.Error("Empty nested directories should be removed")
 	}
+
+	runtime.GC()
+}
+
+func TestSort_WithCustomConfig(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	configPath := filepath.Join(tmpDir, "custom.json")
+	configContent := `{
+		"rules": {
+			"my_images": [".jpg", ".png"],
+			"my_docs": [".pdf", ".txt"],
+			"my_code": [".go", ".py"]
+		}
+	}`
+	err := os.WriteFile(configPath, []byte(configContent), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create config: %v", err)
+	}
+
+	cfg, err := config.LoadConfig(configPath)
+	if err != nil {
+		t.Fatalf("LoadConfig failed: %v", err)
+	}
+
+	rules := cfg.BuildRuleMap()
+	categories := types.BuildCategorySet(rules)
+
+	createTestFile(t, tmpDir, "photo.jpg")
+	createTestFile(t, tmpDir, "document.pdf")
+	createTestFile(t, tmpDir, "script.go")
+	createTestFile(t, tmpDir, "unknown.xyz")
+
+	opts := Options{
+		Dir:        tmpDir,
+		DryRun:     false,
+		Quiet:      true,
+		Ignore:     map[string]bool{},
+		Recursive:  false,
+		Rules:      rules,
+		Categories: categories,
+	}
+
+	err = Sort(opts)
+	if err != nil {
+		t.Fatalf("Sort with custom config failed: %v", err)
+	}
+
+	checkFileMoved(t, tmpDir, "photo.jpg", "my_images")
+	checkFileMoved(t, tmpDir, "document.pdf", "my_docs")
+	checkFileMoved(t, tmpDir, "script.go", "my_code")
+	checkFileMoved(t, tmpDir, "unknown.xyz", "other")
+
+	runtime.GC()
+}
+
+func TestSort_CustomConfigRecursive(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	configPath := filepath.Join(tmpDir, "config.json")
+	configContent := `{
+		"rules": {
+			"custom_media": [".mp4", ".mp3"],
+			"custom_docs": [".pdf"]
+		}
+	}`
+	os.WriteFile(configPath, []byte(configContent), 0644)
+
+	cfg, _ := config.LoadConfig(configPath)
+	rules := cfg.BuildRuleMap()
+	categories := types.BuildCategorySet(rules)
+
+	subDir := filepath.Join(tmpDir, "subdir")
+	os.MkdirAll(subDir, 0755)
+	createTestFile(t, tmpDir, "video.mp4")
+	createTestFile(t, subDir, "audio.mp3")
+	createTestFile(t, subDir, "doc.pdf")
+
+	opts := Options{
+		Dir:        tmpDir,
+		DryRun:     false,
+		Quiet:      true,
+		Ignore:     map[string]bool{},
+		Recursive:  true,
+		Rules:      rules,
+		Categories: categories,
+	}
+
+	err := Sort(opts)
+	if err != nil {
+		t.Fatalf("Recursive sort with config failed: %v", err)
+	}
+
+	checkFileMoved(t, tmpDir, "video.mp4", "custom_media")
+	checkFileMoved(t, tmpDir, "audio.mp3", "custom_media")
+	checkFileMoved(t, tmpDir, "doc.pdf", "custom_docs")
+
+	runtime.GC()
+}
+
+func TestSort_CustomConfigDryRun(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	configPath := filepath.Join(tmpDir, "config.json")
+	configContent := `{"rules": {"custom": [".jpg"]}}`
+	os.WriteFile(configPath, []byte(configContent), 0644)
+
+	cfg, _ := config.LoadConfig(configPath)
+	rules := cfg.BuildRuleMap()
+	categories := types.BuildCategorySet(rules)
+
+	createTestFile(t, tmpDir, "test.jpg")
+
+	opts := Options{
+		Dir:        tmpDir,
+		DryRun:     true,
+		Quiet:      true,
+		Ignore:     map[string]bool{},
+		Recursive:  false,
+		Rules:      rules,
+		Categories: categories,
+	}
+
+	err := Sort(opts)
+	if err != nil {
+		t.Fatalf("Dry-run with config failed: %v", err)
+	}
+
+	if _, err := os.Stat(filepath.Join(tmpDir, "test.jpg")); os.IsNotExist(err) {
+		t.Error("File should not be moved in dry-run mode")
+	}
+
+	if _, err := os.Stat(filepath.Join(tmpDir, "custom")); !os.IsNotExist(err) {
+		t.Error("Category directory should not be created in dry-run")
+	}
+
+	runtime.GC()
+}
+
+func TestSort_CustomConfigWithIgnore(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	configPath := filepath.Join(tmpDir, "config.json")
+	configContent := `{"rules": {"my_docs": [".pdf", ".txt"]}}`
+	os.WriteFile(configPath, []byte(configContent), 0644)
+
+	cfg, _ := config.LoadConfig(configPath)
+	rules := cfg.BuildRuleMap()
+	categories := types.BuildCategorySet(rules)
+
+	createTestFile(t, tmpDir, "report.pdf")
+	createTestFile(t, tmpDir, "temp.txt")
+	createTestFile(t, tmpDir, "ignore.txt")
+
+	opts := Options{
+		Dir:        tmpDir,
+		DryRun:     false,
+		Quiet:      true,
+		Ignore:     map[string]bool{"ignore.txt": true},
+		Recursive:  false,
+		Rules:      rules,
+		Categories: categories,
+	}
+
+	err := Sort(opts)
+	if err != nil {
+		t.Fatalf("Sort with config and ignore failed: %v", err)
+	}
+
+	checkFileMoved(t, tmpDir, "report.pdf", "my_docs")
+	checkFileMoved(t, tmpDir, "temp.txt", "my_docs")
+
+	if _, err := os.Stat(filepath.Join(tmpDir, "ignore.txt")); os.IsNotExist(err) {
+		t.Error("Ignored file should stay in place")
+	}
+
+	runtime.GC()
+}
+
+func TestSort_DefaultRulesFallback(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	configPath := filepath.Join(tmpDir, "empty.json")
+	os.WriteFile(configPath, []byte(`{"rules": {}}`), 0644)
+
+	cfg, _ := config.LoadConfig(configPath)
+	rules := cfg.BuildRuleMap()
+	categories := types.BuildCategorySet(rules)
+
+	createTestFile(t, tmpDir, "photo.jpg")
+	createTestFile(t, tmpDir, "unknown.xyz")
+
+	opts := Options{
+		Dir:        tmpDir,
+		DryRun:     false,
+		Quiet:      true,
+		Ignore:     map[string]bool{},
+		Recursive:  false,
+		Rules:      rules,
+		Categories: categories,
+	}
+
+	err := Sort(opts)
+	if err != nil {
+		t.Fatalf("Sort with empty config failed: %v", err)
+	}
+
+	checkFileMoved(t, tmpDir, "photo.jpg", "other")
+	checkFileMoved(t, tmpDir, "unknown.xyz", "other")
 
 	runtime.GC()
 }
