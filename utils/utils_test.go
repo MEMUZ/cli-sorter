@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"cli-sorter/types"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -111,7 +112,8 @@ func TestRemoveEmptyDirs(t *testing.T) {
 	categoryDir := filepath.Join(tmpDir, "images")
 	os.MkdirAll(categoryDir, 0755)
 
-	err := RemoveEmptyDirs(tmpDir)
+	categories := types.BuildCategorySet(types.Rules)
+	err := RemoveEmptyDirs(tmpDir, categories)
 	if err != nil {
 		t.Fatalf("RemoveEmptyDirs failed: %v", err)
 	}
@@ -140,7 +142,8 @@ func TestRemoveEmptyDirs(t *testing.T) {
 func TestRemoveEmptyDirs_RootProtection(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	err := RemoveEmptyDirs(tmpDir)
+	categories := types.BuildCategorySet(types.Rules)
+	err := RemoveEmptyDirs(tmpDir, categories)
 	if err != nil {
 		t.Fatalf("RemoveEmptyDirs failed: %v", err)
 	}

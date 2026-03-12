@@ -1,7 +1,6 @@
 package sorter
 
 import (
-	"cli-sorter/types"
 	"cli-sorter/utils"
 	"os"
 	"path/filepath"
@@ -10,12 +9,21 @@ import (
 	"github.com/fatih/color"
 )
 
-func Sort(dir string, dryRun bool, quiet bool, ignore string, recursive bool) error {
-	statsMap := map[string]int{}
-	ignoreMap := utils.ParseIgnore(ignore)
+type Options struct {
+	Dir        string
+	DryRun     bool
+	Quiet      bool
+	Ignore     map[string]bool
+	Recursive  bool
+	Rules      map[string]string
+	Categories map[string]bool
+}
 
-	if !recursive {
-		files, err := os.ReadDir(dir)
+func Sort(opts Options) error {
+	statsMap := map[string]int{}
+
+	if !opts.Recursive {
+		files, err := os.ReadDir(opts.Dir)
 		if err != nil {
 			return err
 		}
@@ -25,22 +33,22 @@ func Sort(dir string, dryRun bool, quiet bool, ignore string, recursive bool) er
 				continue
 			}
 
-			processFile(dir, dir, file.Name(), dryRun, quiet, ignoreMap, statsMap)
+			processFile(opts, opts.Dir, opts.Dir, file.Name(), statsMap)
 		}
 	} else {
-		filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
+		filepath.WalkDir(opts.Dir, func(path string, d os.DirEntry, err error) error {
 			if err != nil {
 				return nil
 			}
 			if d.IsDir() {
-				if types.IsCategoryDir(d.Name()) {
+				if opts.Categories[d.Name()] {
 					return filepath.SkipDir
 				}
 
 				return nil
 			}
 
-			processFile(dir, filepath.Dir(path), d.Name(), dryRun, quiet, ignoreMap, statsMap)
+			processFile(opts, opts.Dir, filepath.Dir(path), d.Name(), statsMap)
 
 			return nil
 		})
@@ -48,21 +56,21 @@ func Sort(dir string, dryRun bool, quiet bool, ignore string, recursive bool) er
 
 	utils.PrintStats(statsMap)
 
-	if recursive && !dryRun {
-		utils.RemoveEmptyDirs(dir)
+	if opts.Recursive && !opts.DryRun {
+		utils.RemoveEmptyDirs(opts.Dir, opts.Categories)
 	}
 
 	return nil
 }
 
-func processFile(rootDir, currentDir, name string, dryRun, quiet bool, ignoreMap map[string]bool, stats map[string]int) {
+func processFile(opts Options, rootDir, currentDir, name string, stats map[string]int) {
 	ext := strings.ToLower(filepath.Ext(name))
 
-	if ignoreMap[name] || ignoreMap[ext] {
+	if opts.Ignore[name] || opts.Ignore[ext] {
 		return
 	}
 
-	category, ok := types.Rules[ext]
+	category, ok := opts.Rules[ext]
 	if !ok {
 		category = "other"
 	}
@@ -71,8 +79,8 @@ func processFile(rootDir, currentDir, name string, dryRun, quiet bool, ignoreMap
 	dstDir := filepath.Join(rootDir, category)
 	dst := utils.GetUniqueFilePath(filepath.Join(dstDir, name))
 
-	if dryRun {
-		if !quiet {
+	if opts.DryRun {
+		if !opts.Quiet {
 			color.New(color.FgHiYellow).Printf("[DRY] %s -> %s\n", name, category)
 		}
 		stats[category]++
@@ -89,7 +97,7 @@ func processFile(rootDir, currentDir, name string, dryRun, quiet bool, ignoreMap
 
 	stats[category]++
 
-	if !quiet {
+	if !opts.Quiet {
 		color.New(color.FgHiBlue).Printf("Moved: %s -> %s\n", name, category)
 	}
 }
